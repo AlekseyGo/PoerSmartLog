@@ -15,7 +15,7 @@ use lib "$Bin/../Kernel/cpan-lib";
 use Kernel::System::PoerSmart;
 
 # 0=off;1=on;
-my $Debug = 0;
+my $Debug = 1;
 
 my $PoerSmartObject = Kernel::System::PoerSmart->new();
 

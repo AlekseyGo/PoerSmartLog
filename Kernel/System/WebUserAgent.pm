@@ -154,6 +154,11 @@ sub Request {
         'PoerSmart'
     );
 
+    # set http-proxy
+    if (defined($Param{Proxy}) and $Param{Proxy} ne '') {
+	$UserAgent->proxy( 'http', $Param{Proxy} );
+    }
+
     if ( $Param{Type} eq 'GET' ) {
 
         # perform get request on URL

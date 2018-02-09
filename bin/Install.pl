@@ -73,12 +73,16 @@ my @Commands = (
                     RfLinkActuator TINYINT,
                     RfLinkGateway TINYINT,
                     SoftVersion VARCHAR(10),
-                    SptTemprature FLOAT,
+                    SptTemperature FLOAT,
                     VoltCap TINYINT,
                     VoltTrl SMALLINT,
                     WindowOpen TINYINT,
                     WorkMode TINYINT,
                     WriteStatus TINYINT,
+		    ActuatorGetStatus TINYINT,
+		    ActuatorErrorMessage VARCHAR(100),
+		    ActuatorLinkStatus TINYINT,
+		    ActuatorHeatStatus TINYINT,
                     TimeStamp DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             '

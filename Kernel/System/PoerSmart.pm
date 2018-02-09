@@ -13,6 +13,8 @@ use Kernel::System::XML;
 use Kernel::System::File;
 use Kernel::System::WebUserAgent;
 use Kernel::System::DB;
+use Data::Dumper;
+use Scalar::Util qw(reftype);
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -94,7 +96,7 @@ sub ParametersGet {
     my %ConnectionData;
     
     # Get ConnectionData from XML file.
-    for my $Needed (qw(Email Password URL Realm Location)) {
+    for my $Needed (qw(Email Password URL ActuatorURL Realm Location Proxy)) {
 
         ITEM:
         for my $Item (@XML) {
@@ -115,6 +117,7 @@ sub ParametersGet {
             Realm    => $ConnectionData{Realm},
             Location => $ConnectionData{Location},
         },
+	Proxy	=> $ConnectionData{Proxy},
         NoLog               => 1,
     );
 
@@ -126,8 +129,6 @@ sub ParametersGet {
         return;
     }
 
-    my $JSONObject = Kernel::System::JSON->new();
-
     # Trim response.
     my $Content = $Self->_StringClean(
         StringRef => $Response{Content},
@@ -135,10 +136,50 @@ sub ParametersGet {
         TrimRight => 1,
         RemoveAllNewlines => 1,
     );
-    
+
+    my $JSONObject = Kernel::System::JSON->new();
+
     my $PerlStructure = $JSONObject->Decode(
         Data => $$Content,
     );
+
+    %Response = $WebUserAgentObject->Request(
+        URL  => $ConnectionData{ActuatorURL},
+        Type         => 'GET',
+        Data         => [  ],
+        Credentials  => {
+            User     => $ConnectionData{Email},
+            Password => $ConnectionData{Password},
+            Realm    => $ConnectionData{Realm},
+            Location => $ConnectionData{Location},
+        },
+	Proxy	=> $ConnectionData{Proxy},
+        NoLog               => 1,
+    );
+
+    if ($Response{Status} ne '200 OK') {
+
+        # Something went wrong.
+        # TODO: Log.
+        print $Response{Status};
+        return;
+    }
+
+    # Trim response.
+    $Content = $Self->_StringClean(
+        StringRef => $Response{Content},
+        TrimLeft  => 1,
+        TrimRight => 1,
+        RemoveAllNewlines => 1,
+    );
+    my $PerlStructure2 = $JSONObject->Decode(
+        Data => $$Content,
+    );
+
+
+    # Copy hash values of Actuator to another
+    my @A = @{$PerlStructure};
+    @{$A[0]}{keys %$PerlStructure2} = values %$PerlStructure2;
 
     for my $ArrayItem (@{$PerlStructure}) {
 
@@ -173,10 +214,11 @@ sub LogAdd {
                 HolidayEnd, HolidayIsOpen, HolidayStart, Humidity, DeviceID, LocateId,
                 MakePowerPercent, ManTemprature, NodeName, NodeSN, NodeType, OffTemprature,
                 OverrideIsOpen, OverrideTemperature, OverrideTime, RfLinkActuator, RfLinkGateway,
-                SoftVersion, SptTemprature, VoltCap, VoltTrl, WindowOpen, WorkMode, WriteStatus
+                SoftVersion, SptTemperature, VoltCap, VoltTrl, WindowOpen, WorkMode, WriteStatus,
+		ActuatorGetStatus, ActuatorErrorMessage, ActuatorLinkStatus, ActuatorHeatStatus
             )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?)
+            ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ';
 
     # create db record
@@ -218,6 +260,10 @@ sub LogAdd {
             \$Param{Data}->{WindowOpen},
             \$Param{Data}->{WorkMode},
             \$Param{Data}->{WriteStatus},
+	    \$Param{Data}->{GetStatus},
+	    \$Param{Data}->{ErrorMessage},
+	    \$Param{Data}->{LinkStatus},
+	    \$Param{Data}->{HeatStatus}
         ],
     );
 
